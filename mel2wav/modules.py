@@ -85,7 +85,7 @@ class ResnetBlock(nn.Module):
         return self.shortcut(x) + self.block(x)
 
 
-class Generator(nn.Module):
+class OriginalGenerator(nn.Module):
     def __init__(self, input_size, ngf, n_residual_layers):
         super().__init__()
         ratios = [8, 8, 2, 2]
@@ -119,6 +119,84 @@ class Generator(nn.Module):
         model += [
             nn.LeakyReLU(0.2),
             nn.ReflectionPad1d(3),
+            WNConv1d(ngf, 1, kernel_size=7, padding=0),
+            nn.Tanh(),
+        ]
+
+        self.model = nn.Sequential(*model)
+        self.apply(weights_init)
+
+    def forward(self, x):
+        return self.model(x)
+
+
+class BGRU(nn.Module):
+    def __init__(self, feat_dim):
+        super().__init__()
+        self.rec = nn.GRU(
+            feat_dim, feat_dim, num_layers=1, batch_first=True, bidirectional=True
+        )
+
+    def forward(self, x):
+        bs, fd, nf = x.size()
+        x_ = x
+        x = x.transpose(1, 2)
+        x, _ = self.rec(x)
+        x = x.transpose(1, 2).view(bs, 2, fd, nf).sum(1)
+        x = x + x_
+
+        return x
+
+
+class GRUGenerator(nn.Module):
+    def __init__(self, input_size, ngf, n_residual_layers):
+        super().__init__()
+        ratios = [8, 8, 2, 2]
+        self.hop_length = np.prod(ratios)
+        mult = int(2 ** len(ratios))
+
+        model = [
+            nn.ReflectionPad1d(3),
+            WNConv1d(input_size, mult * ngf, kernel_size=7, padding=0),
+        ]
+
+        # Upsample to raw audio scale
+        for i, r in enumerate(ratios):
+            if i == 0:
+                model += [
+                    nn.LeakyReLU(0.2),
+                    BGRU(mult * ngf),
+                    WNConvTranspose1d(
+                        mult * ngf,
+                        mult * ngf // 2,
+                        kernel_size=r * 2,
+                        stride=r,
+                        padding=r // 2 + r % 2,
+                        output_padding=r % 2,
+                    ),
+                ]
+            else:
+                model += [
+                    nn.LeakyReLU(0.2),
+                    WNConvTranspose1d(
+                        mult * ngf,
+                        mult * ngf // 2,
+                        kernel_size=r * 2,
+                        stride=r,
+                        padding=r // 2 + r % 2,
+                        output_padding=r % 2,
+                    ),
+                ]
+
+            for j in range(n_residual_layers):
+                model += [ResnetBlock(mult * ngf // 2, dilation=3 ** j)]
+
+            mult //= 2
+
+        model += [
+            nn.LeakyReLU(0.2),
+            nn.ReflectionPad1d(3),
+            # BGRU(ngf),
             WNConv1d(ngf, 1, kernel_size=7, padding=0),
             nn.Tanh(),
         ]
@@ -197,3 +275,6 @@ class Discriminator(nn.Module):
             results.append(disc(x))
             x = self.downsample(x)
         return results
+
+
+Generator = GRUGenerator
