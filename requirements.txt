@@ -1,5 +1,5 @@
 torch
-librosa
+librosa>=0.8.0
 pyyaml
 scipy
 argparse

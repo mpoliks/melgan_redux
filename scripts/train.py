@@ -77,9 +77,6 @@ def main():
     for model in [netG, netD, fft]:
         wandb.watch(model)
 
-    print(netG)
-    print(netD)
-
     #####################
     # Create optimizers #
     #####################

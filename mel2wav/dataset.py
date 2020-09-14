@@ -59,11 +59,7 @@ class AudioDataset(torch.utils.data.Dataset):
         audio = self.load_wav_to_torch(audio_file.path, offset)
 
         # Take segment
-        if audio.size(0) >= self.segment_length:
-            max_audio_start = audio.size(0) - self.segment_length
-            audio_start = random.randint(0, max_audio_start)
-            audio = audio[audio_start : audio_start + self.segment_length]
-        else:
+        if audio.size(0) < self.segment_length:
             audio = F.pad(
                 audio, (0, self.segment_length - audio.size(0)), "constant"
             ).data
@@ -78,7 +74,7 @@ class AudioDataset(torch.utils.data.Dataset):
         """
         Loads wavdata into torch array
         """
-        load_duration = 2 * self.segment_length / self.sampling_rate
+        load_duration = self.segment_length / self.sampling_rate
         data, _ = load(
             full_path, sr=self.sampling_rate, offset=offset, duration=load_duration
         )
