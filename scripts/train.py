@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from mel2wav.dataset import AudioDataset
 from mel2wav.modules import Generator, Discriminator, Audio2Mel
 from mel2wav.utils import save_sample
@@ -5,13 +6,14 @@ from mel2wav.utils import save_sample
 import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
-from torch.utils.tensorboard import SummaryWriter
 
 import yaml
 import numpy as np
 import time
 import argparse
 from pathlib import Path
+
+import wandb
 
 
 def parse_args():
@@ -45,7 +47,15 @@ def parse_args():
 def main():
     args = parse_args()
 
-    root = Path(args.save_path)
+    wandb.init(
+        entity="demiurge",
+        project="melgan",
+        config=args,
+        save_code=True,
+        dir=args.save_path,
+    )
+
+    root = Path(wandb.run.dir)
     load_root = Path(args.load_path) if args.load_path else None
     root.mkdir(parents=True, exist_ok=True)
 
@@ -54,7 +64,6 @@ def main():
     ####################################
     with open(root / "args.yml", "w") as f:
         yaml.dump(args, f)
-    writer = SummaryWriter(str(root))
 
     #######################
     # Load PyTorch Models #
@@ -64,6 +73,9 @@ def main():
         args.num_D, args.ndf, args.n_layers_D, args.downsamp_factor
     ).cuda()
     fft = Audio2Mel(n_mel_channels=args.n_mel_channels).cuda()
+
+    for model in [netG, netD, fft]:
+        wandb.watch(model)
 
     print(netG)
     print(netD)
@@ -92,6 +104,8 @@ def main():
         sampling_rate=22050,
         augment=False,
     )
+    wandb.save(str(Path(args.data_path) / "train_files.txt"))
+    wandb.save(str(Path(args.data_path) / "test_files.txt"))
 
     train_loader = DataLoader(train_set, batch_size=args.batch_size, num_workers=4)
     test_loader = DataLoader(test_set, batch_size=1)
@@ -101,6 +115,7 @@ def main():
     ##########################
     test_voc = []
     test_audio = []
+    samples = []
     for i, x_t in enumerate(test_loader):
         x_t = x_t.cuda()
         s_t = fft(x_t).detach()
@@ -110,10 +125,14 @@ def main():
 
         audio = x_t.squeeze().cpu()
         save_sample(root / ("original_%d.wav" % i), 22050, audio)
-        writer.add_audio("original/sample_%d.wav" % i, audio, 0, sample_rate=22050)
+        samples.append(wandb.Audio(audio, caption=f"sample {i}", sample_rate=22050))
 
         if i == args.n_test_samples - 1:
             break
+
+    wandb.log(
+        {"audio/original": samples}, step=0,
+    )
 
     costs = []
     start = time.time()
@@ -171,30 +190,35 @@ def main():
             (loss_G + args.lambda_feat * loss_feat).backward()
             optG.step()
 
-            ######################
-            # Update tensorboard #
-            ######################
             costs.append([loss_D.item(), loss_G.item(), loss_feat.item(), s_error])
 
-            writer.add_scalar("loss/discriminator", costs[-1][0], steps)
-            writer.add_scalar("loss/generator", costs[-1][1], steps)
-            writer.add_scalar("loss/feature_matching", costs[-1][2], steps)
-            writer.add_scalar("loss/mel_reconstruction", costs[-1][3], steps)
+            wandb.log(
+                {
+                    "loss/discriminator": costs[-1][0],
+                    "loss/generator": costs[-1][1],
+                    "loss/feature_matching": costs[-1][2],
+                    "loss/mel_reconstruction": costs[-1][3],
+                },
+                step=steps,
+            )
             steps += 1
 
             if steps % args.save_interval == 0:
                 st = time.time()
                 with torch.no_grad():
+                    samples = []
                     for i, (voc, _) in enumerate(zip(test_voc, test_audio)):
                         pred_audio = netG(voc)
                         pred_audio = pred_audio.squeeze().cpu()
                         save_sample(root / ("generated_%d.wav" % i), 22050, pred_audio)
-                        writer.add_audio(
-                            "generated/sample_%d.wav" % i,
-                            pred_audio,
-                            epoch,
-                            sample_rate=22050,
+                        samples.append(
+                            wandb.Audio(
+                                pred_audio, caption=f"sample {i}", sample_rate=22050,
+                            )
                         )
+                    wandb.log(
+                        {"audio/generated": samples, "epoch": epoch,}, step=steps,
+                    )
 
                 torch.save(netG.state_dict(), root / "netG.pt")
                 torch.save(optG.state_dict(), root / "optG.pt")
