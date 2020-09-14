@@ -4,3 +4,4 @@ pyyaml
 scipy
 argparse
 wandb==0.9.7
+soundfile
