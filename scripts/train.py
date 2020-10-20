@@ -54,7 +54,7 @@ def main():
         project="melgan",
         config=args,
         id=args.id,
-        resume=True,
+        resume=args.id is not None,
         save_code=True,
         dir=args.save_path,
     )
