@@ -3,5 +3,5 @@ librosa>=0.8.0
 pyyaml
 scipy
 argparse
-wandb==0.9.7
+wandb==0.10.7
 soundfile
