@@ -92,7 +92,7 @@ def main():
             (netG, "netG.pt"),
             (optG, "optG.pt"),
             (netD, "netD.pt"),
-            (optD, "optD.pt")
+            (optD, "optD.pt"),
         ]:
             print(f"Restoring {filename}")
             restored_file = wandb.restore(filename)
@@ -136,10 +136,10 @@ def main():
         if i == args.n_test_samples - 1:
             break
 
-    wandb.log(
-        {"audio/original": samples},
-        step=0,
-    )
+    if not args.id:
+        wandb.log({"audio/original": samples}, step=0)
+    else:
+        print("We are resuming, skipping logging of original audio.")
 
     costs = []
     start = time.time()
@@ -149,8 +149,9 @@ def main():
 
     best_mel_reconst = 1000000
     steps = wandb.run.step
+    start_epoch = steps // len(train_loader)
 
-    for epoch in range(1, args.epochs + 1):
+    for epoch in range(start_epoch, start_epoch + args.epochs + 1):
         for iterno, x_t in enumerate(train_loader):
             x_t = x_t.cuda()
             s_t = fft(x_t).detach()
