@@ -19,7 +19,7 @@ import wandb
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--save_path", required=True)
-    parser.add_argument("--id", default=None)
+    parser.add_argument("--load_from_run_id", default=None)
 
     parser.add_argument("--n_mel_channels", type=int, default=80)
     parser.add_argument("--ngf", type=int, default=32)
@@ -48,13 +48,14 @@ def main():
     args = parse_args()
 
     Path(args.save_path).mkdir(parents=True, exist_ok=True)
+    entity = "demiurge"
+    project = "melgan"
 
     wandb.init(
-        entity="demiurge",
-        project="melgan",
+        entity=entity,
+        project=project,
         config=args,
-        id=args.id,
-        resume=args.id is not None,
+        resume=False,
         save_code=True,
         dir=args.save_path,
     )
@@ -86,16 +87,17 @@ def main():
     optG = torch.optim.Adam(netG.parameters(), lr=1e-4, betas=(0.5, 0.9))
     optD = torch.optim.Adam(netD.parameters(), lr=1e-4, betas=(0.5, 0.9))
 
-    if args.id:
-        print(f"Restoring from id {args.id}")
+    if args.load_from_run_id:
+        print(f"Loading initial weights from run ID {args.load_from_run_id}")
         for obj, filename in [
             (netG, "netG.pt"),
             (optG, "optG.pt"),
             (netD, "netD.pt"),
             (optD, "optD.pt"),
         ]:
-            print(f"Restoring {filename}")
-            restored_file = wandb.restore(filename)
+            run_path = f"{entity}/{project}/{args.load_from_run_id}"
+            print(f"Restoring {filename} from {run_path}")
+            restored_file = wandb.restore(filename, run_path=run_path)
             obj.load_state_dict(torch.load(restored_file.name))
 
     #######################
@@ -136,10 +138,7 @@ def main():
         if i == args.n_test_samples - 1:
             break
 
-    if not args.id:
-        wandb.log({"audio/original": samples}, step=0)
-    else:
-        print("We are resuming, skipping logging of original audio.")
+    wandb.log({"audio/original": samples}, step=0)
 
     costs = []
     start = time.time()
@@ -148,6 +147,8 @@ def main():
     torch.backends.cudnn.benchmark = True
 
     best_mel_reconst = 1000000
+
+    # XXX can start at zero if we don't use resume feature of wandb
     steps = wandb.run.step
     start_epoch = steps // len(train_loader)
 
