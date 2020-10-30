@@ -32,6 +32,7 @@ def parse_args():
     parser.add_argument("--downsamp_factor", type=int, default=4)
     parser.add_argument("--lambda_feat", type=float, default=10)
     parser.add_argument("--cond_disc", action="store_true")
+    parser.add_argument("--learning_rate", type=float, default=1e-4)
 
     parser.add_argument("--data_path", default=None, type=Path)
     parser.add_argument("--batch_size", type=int, default=16)
@@ -100,8 +101,8 @@ def main():
     #####################
     # Create optimizers #
     #####################
-    optG = torch.optim.Adam(netG.parameters(), lr=1e-4, betas=(0.5, 0.9))
-    optD = torch.optim.Adam(netD.parameters(), lr=1e-4, betas=(0.5, 0.9))
+    optG = torch.optim.Adam(netG.parameters(), lr=args.learning_rate, betas=(0.5, 0.9))
+    optD = torch.optim.Adam(netD.parameters(), lr=args.learning_rate, betas=(0.5, 0.9))
 
     if load_initial_weights:
 
