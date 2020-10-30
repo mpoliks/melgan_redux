@@ -20,6 +20,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--save_path", required=True)
     parser.add_argument("--load_from_run_id", default=None)
+    parser.add_argument("--resume_run_id", default=None)
 
     parser.add_argument("--n_mel_channels", type=int, default=80)
     parser.add_argument("--ngf", type=int, default=32)
@@ -50,12 +51,27 @@ def main():
     Path(args.save_path).mkdir(parents=True, exist_ok=True)
     entity = "demiurge"
     project = "melgan"
+    load_from_run_id = args.load_from_run_id
+    resume_run_id = args.resume_run_id
+    restore_run_id = load_from_run_id or resume_run_id
+    load_initial_weights = bool(restore_run_id)
+
+    if load_from_run_id and resume_run_id:
+        raise RuntimeError("Specify either --load_from_id or --resume_run_id.")
+
+    if resume_run_id:
+        print(f"Resuming run ID {resume_run_id}.")
+    elif load_from_run_id:
+        print(f"Starting new run with initial weights from run ID {load_from_run_id}.")
+    else:
+        print("Starting new run from scratch.")
 
     wandb.init(
         entity=entity,
         project=project,
+        id=resume_run_id,
         config=args,
-        resume=False,
+        resume=True if resume_run_id else False,
         save_code=True,
         dir=args.save_path,
     )
@@ -87,16 +103,16 @@ def main():
     optG = torch.optim.Adam(netG.parameters(), lr=1e-4, betas=(0.5, 0.9))
     optD = torch.optim.Adam(netD.parameters(), lr=1e-4, betas=(0.5, 0.9))
 
-    if args.load_from_run_id:
-        print(f"Loading initial weights from run ID {args.load_from_run_id}")
+    if load_initial_weights:
+
         for obj, filename in [
             (netG, "netG.pt"),
             (optG, "optG.pt"),
             (netD, "netD.pt"),
             (optD, "optD.pt"),
         ]:
-            run_path = f"{entity}/{project}/{args.load_from_run_id}"
-            print(f"Restoring {filename} from {run_path}")
+            run_path = f"{entity}/{project}/{restore_run_id}"
+            print(f"Restoring {filename} from run path {run_path}")
             restored_file = wandb.restore(filename, run_path=run_path)
             obj.load_state_dict(torch.load(restored_file.name))
 
@@ -124,6 +140,18 @@ def main():
     if len(test_loader) == 0:
         raise RuntimeError("Test dataset is empty.")
 
+    # Getting initial run steps and epoch
+
+    if load_from_run_id:
+        api = wandb.Api()
+        previous_run = api.run(f"{entity}/{project}/{restore_run_id}")
+        steps = previous_run.lastHistoryStep
+    else:
+        steps = wandb.run.step
+
+    start_epoch = steps // len(train_loader)
+    print(f"Starting with epoch {start_epoch} and step {steps}.")
+
     ##########################
     # Dumping original audio #
     ##########################
@@ -144,7 +172,10 @@ def main():
         if i == args.n_test_samples - 1:
             break
 
-    wandb.log({"audio/original": samples}, step=0)
+    if not resume_run_id:
+        wandb.log({"audio/original": samples}, step=0)
+    else:
+        print("We are resuming, skipping logging of original audio.")
 
     costs = []
     start = time.time()
@@ -153,10 +184,6 @@ def main():
     torch.backends.cudnn.benchmark = True
 
     best_mel_reconst = 1000000
-
-    # XXX can start at zero if we don't use resume feature of wandb
-    steps = wandb.run.step
-    start_epoch = steps // len(train_loader)
 
     for epoch in range(start_epoch, start_epoch + args.epochs + 1):
         for iterno, x_t in enumerate(train_loader):
