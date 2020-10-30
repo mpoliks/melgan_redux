@@ -118,6 +118,12 @@ def main():
     train_loader = DataLoader(train_set, batch_size=args.batch_size, num_workers=4)
     test_loader = DataLoader(test_set, batch_size=1)
 
+    if len(train_loader) == 0:
+        raise RuntimeError("Train dataset is empty.")
+
+    if len(test_loader) == 0:
+        raise RuntimeError("Test dataset is empty.")
+
     ##########################
     # Dumping original audio #
     ##########################
