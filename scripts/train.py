@@ -33,6 +33,9 @@ def parse_args():
     parser.add_argument("--lambda_feat", type=float, default=10)
     parser.add_argument("--cond_disc", action="store_true")
     parser.add_argument("--learning_rate", type=float, default=1e-4)
+    parser.add_argument(
+        "--pad_mode", type=str, default="reflect", choices=["reflect", "replicate"]
+    )
 
     parser.add_argument("--data_path", default=None, type=Path)
     parser.add_argument("--batch_size", type=int, default=16)
@@ -96,7 +99,7 @@ def main():
     netD = Discriminator(
         args.num_D, args.ndf, args.n_layers_D, args.downsamp_factor
     ).cuda()
-    fft = Audio2Mel(n_mel_channels=args.n_mel_channels).cuda()
+    fft = Audio2Mel(n_mel_channels=args.n_mel_channels, pad_mode=args.pad_mode).cuda()
 
     for model in [netG, netD, fft]:
         wandb.watch(model)
