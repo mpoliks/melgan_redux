@@ -30,6 +30,15 @@ Run these commands:
    ls wavs/*.wav | head -n10 > test_files.txt
    ```
 
+## Installation
+Python dependencies can be installed with
+
+    pip install -r requirements.txt
+
+Or for development
+
+    pip install -r requirements-dev.txt
+
 ## Training Example
 
     wandb login
