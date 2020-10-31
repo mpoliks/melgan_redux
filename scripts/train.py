@@ -1,19 +1,19 @@
 #!/usr/bin/env python
-from mel2wav.dataset import AudioDataset
-from mel2wav.modules import Generator, Discriminator, Audio2Mel
-from mel2wav.utils import save_sample
-
-import torch
-import torch.nn.functional as F
-from torch.utils.data import DataLoader
-
-import yaml
-import numpy as np
-import time
 import argparse
+import time
 from pathlib import Path
 
+import numpy as np
+import torch
+import torch.nn.functional as F
 import wandb
+import yaml
+from torch.utils.data import DataLoader
+
+from mel2wav.dataset import AudioDataset
+from mel2wav.modules import Audio2Mel, Discriminator, Generator
+from mel2wav.utils import save_sample
+from util import seed_everything
 
 
 def parse_args():
@@ -47,6 +47,9 @@ def parse_args():
 
 
 def main():
+
+    seed_everything(7)
+
     args = parse_args()
 
     Path(args.save_path).mkdir(parents=True, exist_ok=True)
