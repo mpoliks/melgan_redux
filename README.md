@@ -46,6 +46,7 @@ Or for development
 
 ### Resume previous training run
 
+
 There are two options
 
     1. `--resume_run_id`: resume a previous run
@@ -54,6 +55,7 @@ There are two options
 The argument is followed by the wandb run ID, for examples `238ye1fk`.
 
     env PYTHONPATH="$PWD:$PYTHONPATH" scripts/train.py --save_path checkpoints --data_path <root_data_folder> --resume_run_id 238ye1fk
+
 
 ## PyTorch Hub Example
     import torch
