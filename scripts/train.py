@@ -10,6 +10,7 @@ import wandb
 import yaml
 from torch.utils.data import DataLoader
 
+import mel2wav.modules
 from mel2wav.dataset import AudioDataset
 from mel2wav.modules import Audio2Mel, Discriminator, Generator
 from mel2wav.utils import save_sample
@@ -95,6 +96,11 @@ def main():
     with open(root / "args.yml", "w") as f:
         yaml.dump(args, f)
     wandb.save("args.yml")
+
+    ###############################################
+    # The file modules.py is needed by the unagan #
+    ###############################################
+    wandb.save(mel2wav.modules.__file__, base_path=".")
 
     #######################
     # Load PyTorch Models #
