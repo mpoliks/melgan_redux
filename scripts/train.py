@@ -45,6 +45,8 @@ def parse_args():
     parser.add_argument("--log_interval", type=int, default=100)
     parser.add_argument("--save_interval", type=int, default=1000)
     parser.add_argument("--n_test_samples", type=int, default=8)
+
+    parser.add_argument("--notes", type=str)
     args = parser.parse_args()
     return args
 
@@ -81,6 +83,7 @@ def main():
         resume=True if resume_run_id else False,
         save_code=True,
         dir=args.save_path,
+        notes=args.notes,
     )
 
     root = Path(wandb.run.dir)
@@ -91,6 +94,7 @@ def main():
     ####################################
     with open(root / "args.yml", "w") as f:
         yaml.dump(args, f)
+    wandb.save("args.yml")
 
     #######################
     # Load PyTorch Models #
