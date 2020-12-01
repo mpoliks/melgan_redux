@@ -41,7 +41,7 @@ def parse_args():
     parser.add_argument("--data_path", default=None, type=Path)
     parser.add_argument("--batch_size", type=int, default=16)
     parser.add_argument("--seq_len", type=int, default=8192)
-    parser.add_argument("--sampling_rate", type=int, default=22050)
+    parser.add_argument("--sampling_rate", type=int, default=44100)
 
     parser.add_argument("--epochs", type=int, default=3000)
     parser.add_argument("--log_interval", type=int, default=100)

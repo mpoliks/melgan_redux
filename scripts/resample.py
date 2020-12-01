@@ -21,7 +21,7 @@ def convert(input, output, samplerate):
 @click.command()
 @click.option("--in-dir", "-i", required=True)
 @click.option("--out-dir", "-o", required=True)
-@click.option("--samplerate", "-s", type=int, default=22050)
+@click.option("--samplerate", "-s", type=int, default=44100)
 def main(in_dir, out_dir, samplerate):
     in_dir = Path(in_dir)
     out_dir = Path(out_dir)
