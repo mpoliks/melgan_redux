@@ -23,11 +23,11 @@ def main():
     train_paths = shuffled_paths[:split_at]
     test_paths = shuffled_paths[split_at:]
 
-    with open(Path(args.data_path) / "train_files.txt", "w") as f:
+    with open("train_files.txt", "w") as f:
         for path in sorted(train_paths):
             print(path, file=f)
 
-    with open(Path(args.data_path) / "test_files.txt", "w") as f:
+    with open("test_files.txt", "w") as f:
         for path in sorted(test_paths):
             print(path, file=f)
 
