@@ -9,6 +9,7 @@ import torch.nn.functional as F
 import wandb
 import yaml
 from torch.utils.data import DataLoader
+from torch.nn.parallel import DataParallel as DP
 
 import mel2wav.modules
 from mel2wav.dataset import AudioDataset
@@ -111,15 +112,36 @@ def main():
     #######################
     # Load PyTorch Models #
     #######################
-    netG = Generator(args.n_mel_channels, args.ngf, args.n_residual_layers).to(device)
-    netD = Discriminator(
-        args.num_D, args.ndf, args.n_layers_D, args.downsamp_factor
-    ).to(device)
-    fft = Audio2Mel(
-        n_mel_channels=args.n_mel_channels,
-        pad_mode=args.pad_mode,
-        sampling_rate=sampling_rate,
-    ).to(device)
+    if torch.cuda.device_count() > 1:
+        netG = DP(
+            Generator(args.n_mel_channels, args.ngf, args.n_residual_layers).to(device)
+        )
+        netD = DP(
+            Discriminator(
+                args.num_D, args.ndf, args.n_layers_D, args.downsamp_factor
+            ).to(device)
+        )
+        fft = DP(
+            Audio2Mel(
+                n_mel_channels=args.n_mel_channels,
+                pad_mode=args.pad_mode,
+                sampling_rate=sampling_rate,
+            ).to(device)
+        )
+        print(f"We have {torch.cuda.device_count()} gpus. Use data parallel.")
+    else:
+        netG = Generator(args.n_mel_channels, args.ngf, args.n_residual_layers).to(
+            device
+        )
+        netD = Discriminator(
+            args.num_D, args.ndf, args.n_layers_D, args.downsamp_factor
+        ).to(device)
+        fft = Audio2Mel(
+            n_mel_channels=args.n_mel_channels,
+            pad_mode=args.pad_mode,
+            sampling_rate=sampling_rate,
+        ).to(device)
+        print(f"We have {torch.cuda.device_count()} gpu.")
 
     for model in [netG, netD, fft]:
         wandb.watch(model)
@@ -141,7 +163,19 @@ def main():
             run_path = f"{entity}/{project}/{restore_run_id}"
             print(f"Restoring {filename} from run path {run_path}")
             restored_file = wandb.restore(filename, run_path=run_path)
-            obj.load_state_dict(torch.load(restored_file.name))
+            try:
+                obj.load_state_dict(torch.load(restored_file.name))
+            except RuntimeError:
+                print(
+                    "Fixing model trained with DataParallel by removing .module prefix"
+                )
+                state_dict = torch.load(restored_file.name, map_location=device)
+                # state_dict = state_dict["state_dict.model"]
+                # remove the DP() to load the model
+                state_dict = OrderedDict(
+                    (k.split(".", 1)[1], v) for k, v in state_dict.items()
+                )
+                obj.load_state_dict(state_dict)
 
     #######################
     # Create data loaders #
