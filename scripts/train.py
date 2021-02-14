@@ -32,7 +32,7 @@ def parse_args():
     parser.add_argument("--num_D", type=int, default=3)
     parser.add_argument("--n_layers_D", type=int, default=4)
     parser.add_argument("--downsamp_factor", type=int, default=4)
-    parser.add_argument("--ratios", default=[8, 8, 2, 2])
+    parser.add_argument("--ratios", type=list, default=[8, 8, 2, 2])
     parser.add_argument("--lambda_feat", type=float, default=10)
     parser.add_argument("--cond_disc", action="store_true")
     parser.add_argument("--learning_rate", type=float, default=1e-4)
@@ -70,6 +70,7 @@ def main():
     restore_run_id = load_from_run_id or resume_run_id
     load_initial_weights = bool(restore_run_id)
     sampling_rate = args.sampling_rate
+    ratios = np.array(args.ratios)
 
     if load_from_run_id and resume_run_id:
         raise RuntimeError("Specify either --load_from_id or --resume_run_id.")
@@ -119,7 +120,7 @@ def main():
                 args.n_mel_channels,
                 args.ngf,
                 args.n_residual_layers,
-                ratios=args.ratios,
+                ratios=ratios,
             ).to(device)
         )
         netD = DP(
@@ -137,7 +138,7 @@ def main():
         print(f"We have {torch.cuda.device_count()} gpus. Use data parallel.")
     else:
         netG = Generator(
-            args.n_mel_channels, args.ngf, args.n_residual_layers, ratios=args.ratios
+            args.n_mel_channels, args.ngf, args.n_residual_layers, ratios=ratios
         ).to(device)
         netD = Discriminator(
             args.num_D, args.ndf, args.n_layers_D, args.downsamp_factor
