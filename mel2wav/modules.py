@@ -151,9 +151,9 @@ class BGRU(nn.Module):
 
 
 class GRUGenerator(nn.Module):
-    def __init__(self, input_size, ngf, n_residual_layers):
+    def __init__(self, input_size, ngf, n_residual_layers, ratios=[8, 8, 2, 2]):
         super().__init__()
-        ratios = [8, 8, 2, 2]
+        # ratios = [8, 8, 2, 2]
         self.hop_length = np.prod(ratios)
         mult = int(2 ** len(ratios))
 
