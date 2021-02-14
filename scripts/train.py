@@ -71,10 +71,14 @@ def main():
     load_initial_weights = bool(restore_run_id)
     sampling_rate = args.sampling_rate
     ratios = args.ratios
-    if isinstance(ratios,str):
+    print("ratios: " + str(ratios))
+    print("ratios type: " + str(type(ratios)))
+    if isinstance(ratios, str):
         ratios = ratios.replace(' ', '')
         ratios = ratios.strip('][').split(',')
         ratios = [int(i) for i in ratios]
+        ratios = np.array(ratios)
+        print("ratios: " + str(ratios))
 
 
     if load_from_run_id and resume_run_id:
@@ -100,6 +104,8 @@ def main():
 
     print("run id: " + str(wandb.run.id))
     print("run name: " + str(wandb.run.name))
+    print("ratios: " +str(ratios))
+    print("args.ratios: " +str(args.ratios))
 
     root = Path(wandb.run.dir)
     root.mkdir(parents=True, exist_ok=True)
