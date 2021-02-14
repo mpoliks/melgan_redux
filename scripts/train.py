@@ -70,7 +70,7 @@ def main():
     restore_run_id = load_from_run_id or resume_run_id
     load_initial_weights = bool(restore_run_id)
     sampling_rate = args.sampling_rate
-    ratios = np.array(args.ratios)
+    ratios = np.array(args.ratios, dtype=np.int32)
 
     if load_from_run_id and resume_run_id:
         raise RuntimeError("Specify either --load_from_id or --resume_run_id.")
@@ -95,6 +95,8 @@ def main():
 
     print("run id: " + str(wandb.run.id))
     print("run name: " + str(wandb.run.name))
+    print("ratios: " + str(ratios))
+    print("args.ratios: " + str(args.ratios))
 
     root = Path(wandb.run.dir)
     root.mkdir(parents=True, exist_ok=True)
