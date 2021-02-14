@@ -32,7 +32,7 @@ def parse_args():
     parser.add_argument("--num_D", type=int, default=3)
     parser.add_argument("--n_layers_D", type=int, default=4)
     parser.add_argument("--downsamp_factor", type=int, default=4)
-    parser.add_argument("--ratios", type=list, default=[8, 8, 2, 2])
+    parser.add_argument("--ratios", default=[8, 8, 2, 2])
     parser.add_argument("--lambda_feat", type=float, default=10)
     parser.add_argument("--cond_disc", action="store_true")
     parser.add_argument("--learning_rate", type=float, default=1e-4)
