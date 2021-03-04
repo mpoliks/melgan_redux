@@ -12,8 +12,17 @@ def parse_args():
 
 def main():
     args = parse_args()
-
-    audio_paths = sorted(list(Path(args.data_path).glob("*")))
+    supported_extensions = set([".wav", ".aif", ".aiff", ".mp3", ".m4a"])
+    audio_paths = list(Path(args.data_path).glob("*.*"))
+    # check files in filepath_list is supported (by extensions)
+    audio_paths = [
+        path
+        for path in audio_paths
+        if (
+            Path(path).suffix in supported_extensions
+            and not str(path).startswith("__MACOSX")
+        )
+    ]
     num_files = len(audio_paths)
 
     np.random.seed(123)
