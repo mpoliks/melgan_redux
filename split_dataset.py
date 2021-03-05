@@ -19,7 +19,7 @@ def main():
         path
         for path in audio_paths
         if (
-            Path(path).suffix in supported_extensions
+            str(Path(path).suffix).lower() in supported_extensions
             and not str(path).startswith("__MACOSX")
         )
     ]
