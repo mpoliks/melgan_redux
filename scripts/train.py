@@ -178,7 +178,8 @@ def main():
             restored_file = wandb.restore(filename, run_path=run_path)
             try:
                 obj.load_state_dict(torch.load(restored_file.name))
-            except RuntimeError:
+            except RuntimeError as e:
+                print("RuntimeError", e)
                 print(
                     "Fixing model trained with DataParallel by removing .module prefix"
                 )
