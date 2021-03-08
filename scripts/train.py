@@ -184,6 +184,7 @@ def main():
                     "Fixing model trained with DataParallel by removing .module prefix"
                 )
                 state_dict = torch.load(restored_file.name, map_location=device)
+                print("state_dict.items():", state_dict.items())
                 # state_dict = state_dict["state_dict.model"]
                 # remove the DP() to load the model
                 state_dict = OrderedDict(
