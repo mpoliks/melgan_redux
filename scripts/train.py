@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import os
 import argparse
 import time
 from pathlib import Path
@@ -17,6 +18,20 @@ from mel2wav.dataset import AudioDataset
 from mel2wav.modules import Audio2Mel, Discriminator, Generator
 from mel2wav.utils import save_sample
 from util import seed_everything
+
+
+def load_state_dict_handleDP(model, filepath):
+    try:
+        model.load_state_dict(torch.load(filepath))
+    except RuntimeError as e:
+        print("RuntimeError", e)
+        print("Fixing model trained with DataParallel by removing .module prefix")
+        state_dict = torch.load(filepath, map_location=device)
+        # state_dict = state_dict["state_dict.model"]
+        # remove the DP() to load the model
+        state_dict = OrderedDict((k.split(".", 1)[1], v) for k, v in state_dict.items())
+        model.load_state_dict(state_dict)
+    return model
 
 
 def parse_args():
@@ -167,29 +182,35 @@ def main():
 
     if load_initial_weights:
 
-        for obj, filename in [
-            (netG, "netG.pt"),
-            (optG, "optG.pt"),
-            (netD, "netD.pt"),
-            (optD, "optD.pt"),
+        for model, filenames in [
+            (netG, ["netG.pt", "netG_prev.pt"]),
+            (optG, ["optG.pt", "optG_prev.pt"]),
+            (netD, ["netD.pt", "netD_prev.pt"]),
+            (optD, ["optD.pt", "optD_prev.pt"]),
         ]:
-            run_path = f"{entity}/{project}/{restore_run_id}"
-            print(f"Restoring {filename} from run path {run_path}")
-            restored_file = wandb.restore(filename, run_path=run_path)
-            try:
-                obj.load_state_dict(torch.load(restored_file.name))
-            except RuntimeError as e:
-                print("RuntimeError", e)
-                print(
-                    "Fixing model trained with DataParallel by removing .module prefix"
+            recover_model = False
+            filepath = None
+            for filename in filenames:
+                try:
+                    run_path = f"{entity}/{project}/{restore_run_id}"
+                    print(f"Restoring {filename} from run path {run_path}")
+                    restored_file = wandb.restore(filename, run_path=run_path)
+                    filepath = restored_file.name
+                    model = load_state_dict_handleDP(model, filepath)
+                    recover_model = True
+                    break
+                except:
+                    print(f"recover model weight file: '{filename}'' failed")
+            if not recover_model:
+                raise RuntimeError(
+                    f"Cannot load model weight files for component {filenames[0]}."
                 )
-                state_dict = torch.load(restored_file.name, map_location=device)
-                # state_dict = state_dict["state_dict.model"]
-                # remove the DP() to load the model
-                state_dict = OrderedDict(
-                    (k.split(".", 1)[1], v) for k, v in state_dict.items()
-                )
-                obj.load_state_dict(state_dict)
+            else:
+                # store successfully recovered model weight file ("***_prev.pt")
+                path_parent = str(Path(filepath).parent)
+                newfilepath = path_parent + filenames[1]
+                os.rename(filepath, newfilepath)
+                wandb.save(newfilepath)
 
     #######################
     # Create data loaders #
