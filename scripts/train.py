@@ -217,8 +217,8 @@ def main():
                 )
             else:
                 # store successfully recovered model weight file ("***_prev.pt")
-                path_parent = str(Path(filepath).parent)
-                newfilepath = path_parent + filenames[1]
+                path_parent = Path(filepath).parent
+                newfilepath = str(path_parent / filenames[1])
                 os.rename(filepath, newfilepath)
                 wandb.save(newfilepath)
 
