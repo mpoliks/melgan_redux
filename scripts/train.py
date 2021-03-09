@@ -87,13 +87,12 @@ def main():
 
     # Getting initial run steps and epoch
     # if restore run, replace args
-    if load_from_run_id:
+    steps = None
+    if restore_run_id:
         api = wandb.Api()
         previous_run = api.run(f"{entity}/{project}/{restore_run_id}")
         steps = previous_run.lastHistoryStep
         args = Namespace(**previous_run.config)
-    else:
-        steps = wandb.run.step
 
     load_initial_weights = bool(restore_run_id)
     sampling_rate = args.sampling_rate
@@ -249,6 +248,8 @@ def main():
     if len(test_loader) == 0:
         raise RuntimeError("Test dataset is empty.")
 
+    if not restore_run_id:
+        steps = wandb.run.step
     start_epoch = steps // len(train_loader)
     print(f"Starting with epoch {start_epoch} and step {steps}.")
 
