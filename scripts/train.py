@@ -92,7 +92,7 @@ def main():
         api = wandb.Api()
         previous_run = api.run(f"{entity}/{project}/{restore_run_id}")
         steps = previous_run.lastHistoryStep
-        args = Namespace(**previous_run.config)
+        args = argparse.Namespace(**previous_run.config)
 
     load_initial_weights = bool(restore_run_id)
     sampling_rate = args.sampling_rate
