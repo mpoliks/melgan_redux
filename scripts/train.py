@@ -21,13 +21,14 @@ from mel2wav.utils import save_sample
 from util import seed_everything
 
 
-def load_state_dict_handleDP(model, filepath, device):
+def load_state_dict_handleDP(model, filepath):
     try:
         model.load_state_dict(torch.load(filepath))
     except RuntimeError as e:
         print("RuntimeError", e)
         print("Fixing model trained with DataParallel by removing .module prefix")
-        state_dict = torch.load(filepath, map_location=device)
+        # state_dict = torch.load(filepath, map_location=device)
+        state_dict = torch.load(filepath)
         # state_dict = state_dict["state_dict.model"]
         # remove the DP() to load the model
         state_dict = OrderedDict((k.split(".", 1)[1], v) for k, v in state_dict.items())
@@ -189,7 +190,7 @@ def main():
                     print(f"Restoring {filename} from run path {run_path}")
                     restored_file = wandb.restore(filename, run_path=run_path)
                     filepath = restored_file.name
-                    model = load_state_dict_handleDP(model, filepath, device)
+                    model = load_state_dict_handleDP(model, filepath)
                     recover_model = True
                     break
                 except RuntimeError as e:
