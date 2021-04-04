@@ -192,7 +192,8 @@ def main():
                     model = load_state_dict_handleDP(model, filepath)
                     recover_model = True
                     break
-                except:
+                except RuntimeError as e:
+                    print("RuntimeError", e)
                     print(f"recover model weight file: '{filename}'' failed")
             if not recover_model:
                 raise RuntimeError(
