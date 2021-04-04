@@ -155,15 +155,13 @@ def main():
 
     netG = Generator(
         args.n_mel_channels, args.ngf, args.n_residual_layers, ratios=ratios
-    ).to(device)
-    netD = Discriminator(
-        args.num_D, args.ndf, args.n_layers_D, args.downsamp_factor
-    ).to(device)
+    )
+    netD = Discriminator(args.num_D, args.ndf, args.n_layers_D, args.downsamp_factor)
     fft = Audio2Mel(
         n_mel_channels=args.n_mel_channels,
         pad_mode=args.pad_mode,
         sampling_rate=sampling_rate,
-    ).to(device)
+    )
 
     for model in [netG, netD, fft]:
         wandb.watch(model)
@@ -213,7 +211,6 @@ def main():
         print(f"We have {torch.cuda.device_count()} gpus. Use data parallel.")
     else:
         print(f"We have {torch.cuda.device_count()} gpu.")
-
 
     if torch.cuda.device_count() > 1:
         netG = DP(netG)
