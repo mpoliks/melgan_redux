@@ -145,41 +145,18 @@ def main():
     #######################
     # Load PyTorch Models #
     #######################
-    if torch.cuda.device_count() > 1:
-        netG = DP(
-            Generator(
-                args.n_mel_channels,
-                args.ngf,
-                args.n_residual_layers,
-                ratios=ratios,
-            ).to(device)
-        )
-        netD = DP(
-            Discriminator(
-                args.num_D, args.ndf, args.n_layers_D, args.downsamp_factor
-            ).to(device)
-        )
-        fft = DP(
-            Audio2Mel(
-                n_mel_channels=args.n_mel_channels,
-                pad_mode=args.pad_mode,
-                sampling_rate=sampling_rate,
-            ).to(device)
-        )
-        print(f"We have {torch.cuda.device_count()} gpus. Use data parallel.")
-    else:
-        netG = Generator(
-            args.n_mel_channels, args.ngf, args.n_residual_layers, ratios=ratios
-        ).to(device)
-        netD = Discriminator(
-            args.num_D, args.ndf, args.n_layers_D, args.downsamp_factor
-        ).to(device)
-        fft = Audio2Mel(
-            n_mel_channels=args.n_mel_channels,
-            pad_mode=args.pad_mode,
-            sampling_rate=sampling_rate,
-        ).to(device)
-        print(f"We have {torch.cuda.device_count()} gpu.")
+
+    netG = Generator(
+        args.n_mel_channels, args.ngf, args.n_residual_layers, ratios=ratios
+    ).to(device)
+    netD = Discriminator(
+        args.num_D, args.ndf, args.n_layers_D, args.downsamp_factor
+    ).to(device)
+    fft = Audio2Mel(
+        n_mel_channels=args.n_mel_channels,
+        pad_mode=args.pad_mode,
+        sampling_rate=sampling_rate,
+    ).to(device)
 
     for model in [netG, netD, fft]:
         wandb.watch(model)
@@ -221,6 +198,14 @@ def main():
                 newfilepath = str(path_parent / filenames[1])
                 os.rename(filepath, newfilepath)
                 wandb.save(newfilepath)
+
+    if torch.cuda.device_count() > 1:
+        netG = DP(netG)
+        netD = DP(netD)
+        fft = DP(fft)
+        print(f"We have {torch.cuda.device_count()} gpus. Use data parallel.")
+    else:
+        print(f"We have {torch.cuda.device_count()} gpu.")
 
     #######################
     # Create data loaders #
