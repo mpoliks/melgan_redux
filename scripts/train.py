@@ -21,7 +21,7 @@ from mel2wav.utils import save_sample
 from util import seed_everything
 
 
-def load_state_dict_handleDP(model, filepath):
+def load_state_dict_handleDP(model, filepath, device):
     try:
         model.load_state_dict(torch.load(filepath))
     except RuntimeError as e:
@@ -189,7 +189,7 @@ def main():
                     print(f"Restoring {filename} from run path {run_path}")
                     restored_file = wandb.restore(filename, run_path=run_path)
                     filepath = restored_file.name
-                    model = load_state_dict_handleDP(model, filepath)
+                    model = load_state_dict_handleDP(model, filepath, device)
                     recover_model = True
                     break
                 except RuntimeError as e:
