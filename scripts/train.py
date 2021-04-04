@@ -3,6 +3,7 @@ import os
 import argparse
 import time
 from pathlib import Path
+from argparse import Namespace
 from collections import OrderedDict
 
 import numpy as np
@@ -84,6 +85,7 @@ def main():
     load_from_run_id = args.load_from_run_id
     resume_run_id = args.resume_run_id
     restore_run_id = load_from_run_id or resume_run_id
+    batch_size = args.batch_size
 
     # Getting initial run steps and epoch
     # if restore run, replace args
@@ -92,7 +94,11 @@ def main():
         api = wandb.Api()
         previous_run = api.run(f"{entity}/{project}/{restore_run_id}")
         steps = previous_run.lastHistoryStep
-        args = argparse.Namespace(**previous_run.config)
+        prev_args = argparse.Namespace(**previous_run.config)
+        args = vars(args)
+        args.update(vars(prev_args))
+        args = Namespace(**args)
+        args.batch_size = batch_size
 
     load_initial_weights = bool(restore_run_id)
     sampling_rate = args.sampling_rate
@@ -198,6 +204,14 @@ def main():
                 newfilepath = str(path_parent / filenames[1])
                 os.rename(filepath, newfilepath)
                 wandb.save(newfilepath)
+    if torch.cuda.device_count() > 1:
+        netG = DP(netG).to(device)
+        netD = DP(netD).to(device)
+        fft = DP(fft).to(device)
+        print(f"We have {torch.cuda.device_count()} gpus. Use data parallel.")
+    else:
+        print(f"We have {torch.cuda.device_count()} gpu.")
+
 
     if torch.cuda.device_count() > 1:
         netG = DP(netG)
