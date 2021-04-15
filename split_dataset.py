@@ -6,6 +6,7 @@ import numpy as np
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_path", type=str, required=True)
+    parser.add_argument("--shuffle", type=bool, default=False)
     args = parser.parse_args()
     return args
 
@@ -27,10 +28,13 @@ def main():
 
     np.random.seed(123)
     test_fraction = 0.1
-    shuffled_paths = np.random.permutation(audio_paths)
+    if args.shuffle:
+        audio_paths = np.random.permutation(audio_paths)
+    else:
+        audio_paths = sorted(audio_paths)
     split_at = int((1 - test_fraction) * num_files)
-    train_paths = shuffled_paths[:split_at]
-    test_paths = shuffled_paths[split_at:]
+    train_paths = audio_paths[:split_at]
+    test_paths = audio_paths[split_at:]
 
     with open("train_files.txt", "w") as f:
         for path in sorted(train_paths):
