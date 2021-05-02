@@ -120,6 +120,12 @@ def main():
     else:
         print("Starting new run from scratch.")
 
+    # read 1 line in train files to log dataset location
+    train_files = Path(args.data_path) / "train_files.txt"
+    with open(filename, encoding="utf-8", mode="r") as f:
+        file = f.readline()
+    args.train_file_sample = str(file)
+
     wandb.init(
         entity=entity,
         project=project,
