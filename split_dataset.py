@@ -6,7 +6,7 @@ import numpy as np
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_path", type=str, required=True)
-    parser.add_argument("--shuffle", type=bool, default=False)
+    parser.add_argument("--shuffle", type=bool, default=True)
     args = parser.parse_args()
     return args
 
@@ -26,9 +26,9 @@ def main():
     ]
     num_files = len(audio_paths)
 
-    np.random.seed(123)
     test_fraction = 0.1
     if args.shuffle:
+        np.random.seed(123)
         audio_paths = np.random.permutation(audio_paths)
     else:
         audio_paths = sorted(audio_paths)
