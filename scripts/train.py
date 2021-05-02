@@ -122,7 +122,7 @@ def main():
 
     # read 1 line in train files to log dataset location
     train_files = Path(args.data_path) / "train_files.txt"
-    with open(filename, encoding="utf-8", mode="r") as f:
+    with open(train_files, encoding="utf-8", mode="r") as f:
         file = f.readline()
     args.train_file_sample = str(file)
 
