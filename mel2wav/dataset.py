@@ -55,7 +55,8 @@ class AudioDataset(torch.utils.data.Dataset):
 
         audio_file = self.random_state.choice(self.audio_files, p=self.weights)
         duration = np.ceil(audio_file.duration)
-        offset = self.random_state.randint(duration)
+        load_duration = self.segment_length / self.sampling_rate
+        offset = self.random_state.randint(duration - load_duration)
         audio = self.load_wav_to_torch(audio_file.path, offset)
 
         # Take segment
@@ -78,10 +79,10 @@ class AudioDataset(torch.utils.data.Dataset):
         data, _ = load(
             full_path, sr=self.sampling_rate, offset=offset, duration=load_duration
         )
-        data = 0.95 * normalize(data)
+        # data = 0.95 * normalize(data)
 
-        if self.augment:
-            amplitude = self.random_state.uniform(low=0.3, high=1.0)
-            data = data * amplitude
+        # if self.augment:
+        #    amplitude = self.random_state.uniform(low=0.3, high=1.0)
+        #    data = data * amplitude
 
         return torch.from_numpy(data).float()
