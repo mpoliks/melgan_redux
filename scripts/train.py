@@ -257,6 +257,7 @@ def main():
     test_voc = []
     test_audio = []
     samples = []
+    num_fix_samples = args.n_test_samples - (args.n_test_samples // 2)
     for i, x_t in enumerate(test_loader):
         x_t = x_t.to(device)
         s_t = fft(x_t).detach()
@@ -270,7 +271,7 @@ def main():
             wandb.Audio(audio, caption=f"sample {i}", sample_rate=sampling_rate)
         )
 
-        if i == args.n_test_samples - 1:
+        if i == num_fix_samples - 1:
             break
 
     if not resume_run_id:
@@ -351,6 +352,7 @@ def main():
                 st = time.time()
                 with torch.no_grad():
                     samples = []
+                    # fix samples
                     for i, (voc, _) in enumerate(zip(test_voc, test_audio)):
                         pred_audio = netG(voc)
                         pred_audio = pred_audio.squeeze().cpu()
@@ -368,6 +370,44 @@ def main():
                         {
                             "audio/generated": samples,
                             "epoch": epoch,
+                        },
+                        step=steps,
+                    )
+
+                    # var samples
+                    source = []
+                    pred = []
+                    num_var_samples = args.n_test_samples - num_fix_samples
+                    for i, x_t in enumerate(test_loader):
+                        # source
+                        x_t = x_t.to(device)
+                        audio = x_t.squeeze().cpu()
+                        source.append(
+                            wandb.Audio(
+                                audio, caption=f"sample {i}", sample_rate=sampling_rate
+                            )
+                        )
+                        # pred
+                        s_t = fft(x_t).detach()
+                        voc = s_t.to(device)
+                        pred_audio = netG(voc)
+                        pred_audio = pred_audio.squeeze().cpu()
+                        pred.append(
+                            wandb.Audio(
+                                pred_audio,
+                                caption=f"sample {i}",
+                                sample_rate=sampling_rate,
+                            )
+                        )
+
+                        # stop when reach log sample
+                        if i == num_var_samples - 1:
+                            break
+
+                    wandb.log(
+                        {
+                            "audio/var_original": source,
+                            "audio/var_generated": pred,
                         },
                         step=steps,
                     )
