@@ -257,6 +257,7 @@ def main():
     test_voc = []
     test_audio = []
     samples = []
+    melImages = []
     num_fix_samples = args.n_test_samples - (args.n_test_samples // 2)
     for i, x_t in enumerate(test_loader):
         x_t = x_t.to(device)
@@ -270,12 +271,14 @@ def main():
         samples.append(
             wandb.Audio(audio, caption=f"sample {i}", sample_rate=sampling_rate)
         )
+        melImages.append(wandb.Image(s_t, caption=f"sample {i}"))
 
         if i == num_fix_samples - 1:
             break
 
     if not resume_run_id:
         wandb.log({"audio/original": samples}, step=0)
+        wandb.log({"mel/original": melImages}, step=0)
     else:
         print("We are resuming, skipping logging of original audio.")
 
@@ -352,6 +355,7 @@ def main():
                 st = time.time()
                 with torch.no_grad():
                     samples = []
+                    melImages = []
                     # fix samples
                     for i, (voc, _) in enumerate(zip(test_voc, test_audio)):
                         pred_audio = netG(voc)
@@ -366,9 +370,11 @@ def main():
                                 sample_rate=sampling_rate,
                             )
                         )
+                        melImages.append(wandb.Image(voc, caption=f"sample {i}"))
                     wandb.log(
                         {
                             "audio/generated": samples,
+                            "mel/generated": melImages,
                             "epoch": epoch,
                         },
                         step=steps,
@@ -377,6 +383,7 @@ def main():
                     # var samples
                     source = []
                     pred = []
+                    pred_mel = []
                     num_var_samples = args.n_test_samples - num_fix_samples
                     for i, x_t in enumerate(test_loader):
                         # source
@@ -399,6 +406,7 @@ def main():
                                 sample_rate=sampling_rate,
                             )
                         )
+                        pred_mel.append(wandb.Image(voc, caption=f"sample {i}"))
 
                         # stop when reach log sample
                         if i == num_var_samples - 1:
@@ -408,6 +416,7 @@ def main():
                         {
                             "audio/var_original": source,
                             "audio/var_generated": pred,
+                            "mel/var_generated": pred,
                         },
                         step=steps,
                     )
