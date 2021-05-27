@@ -8,7 +8,7 @@ from collections import OrderedDict
 
 import numpy as np
 from PIL import Image
-import matplotlib as mpl
+from matplotlib import cm
 import torch
 import torch.nn.functional as F
 import wandb
@@ -261,7 +261,7 @@ def main():
     samples = []
     melImages = []
     num_fix_samples = args.n_test_samples - (args.n_test_samples // 2)
-    cm = mpl.cm.get_cmap("inferno")
+    cmap = cm.get_cmap("inferno")
     for i, x_t in enumerate(test_loader):
         x_t = x_t.to(device)
         s_t = fft(x_t).detach()
@@ -276,7 +276,7 @@ def main():
         )
         melImage = Image.fromarray(s_t.detach().cpu().numpy()).convert("L")
         melImage = melImage.resize((im.width * 4, im.height * 4))
-        melImage = np.uint8(cm(np.array(melImage)) * 255)
+        melImage = np.uint8(cmap(np.array(melImage)) * 255)
         melImages.append(wandb.Image(Image.fromarray(melImage), caption=f"sample {i}"))
 
         if i == num_fix_samples - 1:
@@ -380,7 +380,7 @@ def main():
                             "L"
                         )
                         melImage = melImage.resize((im.width * 4, im.height * 4))
-                        melImage = np.uint8(cm(np.array(melImage)) * 255)
+                        melImage = np.uint8(cmap(np.array(melImage)) * 255)
                         melImages.append(
                             wandb.Image(
                                 Image.fromarray(melImage), caption=f"sample {i}"
@@ -425,7 +425,7 @@ def main():
                             "L"
                         )
                         melImage = melImage.resize((im.width * 4, im.height * 4))
-                        melImage = np.uint8(cm(np.array(melImage)) * 255)
+                        melImage = np.uint8(cmap(np.array(melImage)) * 255)
                         pred_mel.append(
                             wandb.Image(
                                 Image.fromarray(melImage), caption=f"sample {i}"
