@@ -7,6 +7,8 @@ from argparse import Namespace
 from collections import OrderedDict
 
 import numpy as np
+from PIL import Image
+import matplotlib as mpl
 import torch
 import torch.nn.functional as F
 import wandb
@@ -259,6 +261,7 @@ def main():
     samples = []
     melImages = []
     num_fix_samples = args.n_test_samples - (args.n_test_samples // 2)
+    cm = mpl.cm.get_cmap("inferno")
     for i, x_t in enumerate(test_loader):
         x_t = x_t.to(device)
         s_t = fft(x_t).detach()
@@ -271,7 +274,10 @@ def main():
         samples.append(
             wandb.Audio(audio, caption=f"sample {i}", sample_rate=sampling_rate)
         )
-        melImages.append(wandb.Image(s_t, caption=f"sample {i}"))
+        melImage = Image.fromarray(s_t.detach().cpu().numpy()).convert("L")
+        melImage = melImage.resize((im.width * 4, im.height * 4))
+        melImage = np.uint8(cm(np.array(melImage)) * 255)
+        melImages.append(wandb.Image(Image.fromarray(melImage), caption=f"sample {i}"))
 
         if i == num_fix_samples - 1:
             break
@@ -370,7 +376,16 @@ def main():
                                 sample_rate=sampling_rate,
                             )
                         )
-                        melImages.append(wandb.Image(voc, caption=f"sample {i}"))
+                        melImage = Image.fromarray(voc.detach().cpu().numpy()).convert(
+                            "L"
+                        )
+                        melImage = melImage.resize((im.width * 4, im.height * 4))
+                        melImage = np.uint8(cm(np.array(melImage)) * 255)
+                        melImages.append(
+                            wandb.Image(
+                                Image.fromarray(melImage), caption=f"sample {i}"
+                            )
+                        )
                     wandb.log(
                         {
                             "audio/generated": samples,
@@ -406,7 +421,16 @@ def main():
                                 sample_rate=sampling_rate,
                             )
                         )
-                        pred_mel.append(wandb.Image(voc, caption=f"sample {i}"))
+                        melImage = Image.fromarray(voc.detach().cpu().numpy()).convert(
+                            "L"
+                        )
+                        melImage = melImage.resize((im.width * 4, im.height * 4))
+                        melImage = np.uint8(cm(np.array(melImage)) * 255)
+                        pred_mel.append(
+                            wandb.Image(
+                                Image.fromarray(melImage), caption=f"sample {i}"
+                            )
+                        )
 
                         # stop when reach log sample
                         if i == num_var_samples - 1:
@@ -416,7 +440,7 @@ def main():
                         {
                             "audio/var_original": source,
                             "audio/var_generated": pred,
-                            "mel/var_generated": pred,
+                            "mel/var_generated": pred_mel,
                         },
                         step=steps,
                     )
