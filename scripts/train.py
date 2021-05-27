@@ -274,10 +274,11 @@ def main():
         samples.append(
             wandb.Audio(audio, caption=f"sample {i}", sample_rate=sampling_rate)
         )
-        melImage = Image.fromarray(s_t.detach().cpu().numpy()).convert("L")
+        print("s_t shape:", s_t.shape)
+        melImage = np.uint8(cmap(s_t.detach().cpu().numpy()) * 255)
+        melImage = Image.fromarray(melImage)
         melImage = melImage.resize((im.width * 4, im.height * 4))
-        melImage = np.uint8(cmap(np.array(melImage)) * 255)
-        melImages.append(wandb.Image(Image.fromarray(melImage), caption=f"sample {i}"))
+        melImages.append(wandb.Image(melImage, caption=f"sample {i}"))
 
         if i == num_fix_samples - 1:
             break
@@ -376,16 +377,10 @@ def main():
                                 sample_rate=sampling_rate,
                             )
                         )
-                        melImage = Image.fromarray(voc.detach().cpu().numpy()).convert(
-                            "L"
-                        )
+                        melImage = np.uint8(cmap(voc.detach().cpu().numpy()) * 255)
+                        melImage = Image.fromarray(melImage)
                         melImage = melImage.resize((im.width * 4, im.height * 4))
-                        melImage = np.uint8(cmap(np.array(melImage)) * 255)
-                        melImages.append(
-                            wandb.Image(
-                                Image.fromarray(melImage), caption=f"sample {i}"
-                            )
-                        )
+                        melImages.append(wandb.Image(melImage, caption=f"sample {i}"))
                     wandb.log(
                         {
                             "audio/generated": samples,
@@ -421,16 +416,10 @@ def main():
                                 sample_rate=sampling_rate,
                             )
                         )
-                        melImage = Image.fromarray(voc.detach().cpu().numpy()).convert(
-                            "L"
-                        )
+                        melImage = np.uint8(cmap(voc.detach().cpu().numpy()) * 255)
+                        melImage = Image.fromarray(melImage)
                         melImage = melImage.resize((im.width * 4, im.height * 4))
-                        melImage = np.uint8(cmap(np.array(melImage)) * 255)
-                        pred_mel.append(
-                            wandb.Image(
-                                Image.fromarray(melImage), caption=f"sample {i}"
-                            )
-                        )
+                        pred_mel.append(wandb.Image(melImage, caption=f"sample {i}"))
 
                         # stop when reach log sample
                         if i == num_var_samples - 1:
