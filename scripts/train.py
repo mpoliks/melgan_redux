@@ -274,7 +274,12 @@ def main():
         samples.append(
             wandb.Audio(audio, caption=f"sample {i}", sample_rate=sampling_rate)
         )
-        melImage = Image.fromarray(s_t.squeeze().detach().cpu().numpy()).convert("L")
+        melImage = s_t.squeeze().detach().cpu().numpy()
+        melImage = (melImage - np.amin(melImage)) / (
+            np.amax(melImage) - np.amin(melImage)
+        )
+        melImage = Image.fromarray(melImage).convert("L")
+        melImage = Image.fromarray(np.uint8(cmap(np.array(melImage))) * 255)
         melImage = melImage.resize((melImage.width * 4, melImage.height * 4))
         melImages.append(wandb.Image(melImage, caption=f"sample {i}"))
 
@@ -375,9 +380,14 @@ def main():
                                 sample_rate=sampling_rate,
                             )
                         )
+                        melImage = voc.squeeze().detach().cpu().numpy()
+                        melImage = (melImage - np.amin(melImage)) / (
+                            np.amax(melImage) - np.amin(melImage)
+                        )
+                        melImage = Image.fromarray(melImage).convert("L")
                         melImage = Image.fromarray(
-                            voc.squeeze().detach().cpu().numpy()
-                        ).convert("L")
+                            np.uint8(cmap(np.array(melImage))) * 255
+                        )
                         melImage = melImage.resize(
                             (melImage.width * 4, melImage.height * 4)
                         )
@@ -417,9 +427,14 @@ def main():
                                 sample_rate=sampling_rate,
                             )
                         )
+                        melImage = voc.squeeze().detach().cpu().numpy()
+                        melImage = (melImage - np.amin(melImage)) / (
+                            np.amax(melImage) - np.amin(melImage)
+                        )
+                        melImage = Image.fromarray(melImage).convert("L")
                         melImage = Image.fromarray(
-                            voc.squeeze().detach().cpu().numpy()
-                        ).convert("L")
+                            np.uint8(cmap(np.array(melImage))) * 255
+                        )
                         melImage = melImage.resize(
                             (melImage.width * 4, melImage.height * 4)
                         )
