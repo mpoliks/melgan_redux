@@ -278,9 +278,9 @@ def main():
         melImage = (melImage - np.amin(melImage)) / (
             np.amax(melImage) - np.amin(melImage)
         )
-        melImage = Image.fromarray(np.uint8(cmap(melImage)) * 255)
+        # melImage = Image.fromarray(np.uint8(cmap(melImage)) * 255)
         # melImage = melImage.resize((melImage.width * 4, melImage.height * 4))
-        melImages.append(wandb.Image(melImage, caption=f"sample {i}"))
+        melImages.append(wandb.Image(cmap(melImage), caption=f"sample {i}"))
 
         if i == num_fix_samples - 1:
             break
@@ -383,11 +383,11 @@ def main():
                         melImage = (melImage - np.amin(melImage)) / (
                             np.amax(melImage) - np.amin(melImage)
                         )
-                        melImage = Image.fromarray(np.uint8(cmap(melImage)) * 255)
+                        # melImage = Image.fromarray(np.uint8(cmap(melImage)) * 255)
                         # melImage = melImage.resize(
                         #     (melImage.width * 4, melImage.height * 4)
                         # )
-                        melImages.append(wandb.Image(melImage, caption=f"sample {i}"))
+                        melImages.append(wandb.Image(cmap(melImage), caption=f"sample {i}"))
                     wandb.log(
                         {
                             "audio/generated": samples,
@@ -427,11 +427,11 @@ def main():
                         melImage = (melImage - np.amin(melImage)) / (
                             np.amax(melImage) - np.amin(melImage)
                         )
-                        melImage = Image.fromarray(np.uint8(cmap(melImage)) * 255)
+                        # melImage = Image.fromarray(np.uint8(cmap(melImage)) * 255)
                         # melImage = melImage.resize(
                         #     (melImage.width * 4, melImage.height * 4)
                         # )
-                        pred_mel.append(wandb.Image(melImage, caption=f"sample {i}"))
+                        pred_mel.append(wandb.Image(cmap(melImage), caption=f"sample {i}"))
 
                         # stop when reach log sample
                         if i == num_var_samples - 1:
