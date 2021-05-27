@@ -274,8 +274,7 @@ def main():
         samples.append(
             wandb.Audio(audio, caption=f"sample {i}", sample_rate=sampling_rate)
         )
-        print("s_t shape:", s_t.shape)
-        melImage = np.uint8(cmap(s_t.detach().cpu().numpy()) * 255)
+        melImage = np.uint8(cmap(s_t.squeeze().detach().cpu().numpy()) * 255)
         melImage = Image.fromarray(melImage)
         melImage = melImage.resize((im.width * 4, im.height * 4))
         melImages.append(wandb.Image(melImage, caption=f"sample {i}"))
@@ -377,7 +376,9 @@ def main():
                                 sample_rate=sampling_rate,
                             )
                         )
-                        melImage = np.uint8(cmap(voc.detach().cpu().numpy()) * 255)
+                        melImage = np.uint8(
+                            cmap(voc.squeeze().detach().cpu().numpy()) * 255
+                        )
                         melImage = Image.fromarray(melImage)
                         melImage = melImage.resize((im.width * 4, im.height * 4))
                         melImages.append(wandb.Image(melImage, caption=f"sample {i}"))
@@ -416,7 +417,9 @@ def main():
                                 sample_rate=sampling_rate,
                             )
                         )
-                        melImage = np.uint8(cmap(voc.detach().cpu().numpy()) * 255)
+                        melImage = np.uint8(
+                            cmap(voc.squeeze().detach().cpu().numpy()) * 255
+                        )
                         melImage = Image.fromarray(melImage)
                         melImage = melImage.resize((im.width * 4, im.height * 4))
                         pred_mel.append(wandb.Image(melImage, caption=f"sample {i}"))
