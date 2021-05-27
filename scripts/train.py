@@ -276,7 +276,7 @@ def main():
         )
         melImage = np.uint8(cmap(s_t.squeeze().detach().cpu().numpy()) * 255)
         melImage = Image.fromarray(melImage)
-        melImage = melImage.resize((im.width * 4, im.height * 4))
+        melImage = melImage.resize((melImage.width * 4, melImage.height * 4))
         melImages.append(wandb.Image(melImage, caption=f"sample {i}"))
 
         if i == num_fix_samples - 1:
@@ -380,7 +380,9 @@ def main():
                             cmap(voc.squeeze().detach().cpu().numpy()) * 255
                         )
                         melImage = Image.fromarray(melImage)
-                        melImage = melImage.resize((im.width * 4, im.height * 4))
+                        melImage = melImage.resize(
+                            (melImage.width * 4, melImage.height * 4)
+                        )
                         melImages.append(wandb.Image(melImage, caption=f"sample {i}"))
                     wandb.log(
                         {
@@ -421,7 +423,9 @@ def main():
                             cmap(voc.squeeze().detach().cpu().numpy()) * 255
                         )
                         melImage = Image.fromarray(melImage)
-                        melImage = melImage.resize((im.width * 4, im.height * 4))
+                        melImage = melImage.resize(
+                            (melImage.width * 4, melImage.height * 4)
+                        )
                         pred_mel.append(wandb.Image(melImage, caption=f"sample {i}"))
 
                         # stop when reach log sample
