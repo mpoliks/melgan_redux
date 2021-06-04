@@ -77,14 +77,8 @@ class AudioDataset(torch.utils.data.Dataset):
         """
         load_duration = self.segment_length / self.sampling_rate
         data, _ = load(
-            full_path,
-            sr=self.sampling_rate,
-            offset=offset,
-            duration=load_duration,
-            mono=False,
+            full_path, sr=self.sampling_rate, offset=offset, duration=load_duration
         )
-        if len(data.shape) > 1:
-            data = data[0]
         # data = 0.95 * normalize(data)
 
         # if self.augment:
