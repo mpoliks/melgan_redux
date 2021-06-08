@@ -285,11 +285,11 @@ def main():
         if i == num_fix_samples - 1:
             break
 
-    if not resume_run_id:
-        wandb.log({"audio/original": samples}, step=0)
-        wandb.log({"mel/original": melImages}, step=0)
-    else:
-        print("We are resuming, skipping logging of original audio.")
+    # if not resume_run_id:
+    wandb.log({"audio/original": samples}, step=start_epoch)
+    wandb.log({"mel/original": melImages}, step=start_epoch)
+    # else:
+    #     print("We are resuming, skipping logging of original audio.")
 
     costs = []
     start = time.time()
@@ -387,7 +387,9 @@ def main():
                         # melImage = melImage.resize(
                         #     (melImage.width * 4, melImage.height * 4)
                         # )
-                        melImages.append(wandb.Image(cmap(melImage), caption=f"sample {i}"))
+                        melImages.append(
+                            wandb.Image(cmap(melImage), caption=f"sample {i}")
+                        )
                     wandb.log(
                         {
                             "audio/generated": samples,
@@ -431,7 +433,9 @@ def main():
                         # melImage = melImage.resize(
                         #     (melImage.width * 4, melImage.height * 4)
                         # )
-                        pred_mel.append(wandb.Image(cmap(melImage), caption=f"sample {i}"))
+                        pred_mel.append(
+                            wandb.Image(cmap(melImage), caption=f"sample {i}")
+                        )
 
                         # stop when reach log sample
                         if i == num_var_samples - 1:
