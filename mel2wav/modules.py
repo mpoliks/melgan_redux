@@ -1,7 +1,7 @@
 import torch.nn as nn
 import torch.nn.functional as F
 import torch
-from librosa.filters import mel as librosa_mel_fn
+import librosa
 from torch.nn.utils import weight_norm
 import numpy as np
 
@@ -39,19 +39,26 @@ class Audio2Mel(nn.Module):
         ##############################################
         # FFT Parameters                              #
         ##############################################
-        window = torch.hann_window(win_length).float()
-        mel_basis = librosa_mel_fn(
-            sampling_rate, n_fft, n_mel_channels, mel_fmin, mel_fmax
-        )
-        mel_basis = torch.from_numpy(mel_basis).float()
-        self.register_buffer("mel_basis", mel_basis)
-        self.register_buffer("window", window)
         self.n_fft = n_fft
         self.hop_length = hop_length
         self.win_length = win_length
         self.sampling_rate = sampling_rate
         self.n_mel_channels = n_mel_channels
+        self.mel_fmin = mel_fmin
+        self.mel_fmax = mel_fmax
         self.pad_mode = pad_mode
+
+        window = torch.hann_window(win_length).float()
+        mel_basis = librosa.filters.mel(
+            sr=self.sampling_rate,
+            n_fft=self.n_fft,
+            n_mels=self.n_mel_channels,
+            fmin=self.mel_fmin,
+            fmax=self.mel_fmax
+        )
+        mel_basis = torch.from_numpy(mel_basis).float()
+        self.register_buffer("mel_basis", mel_basis)
+        self.register_buffer("window", window)
 
     def forward(self, audio):
         p = (self.n_fft - self.hop_length) // 2

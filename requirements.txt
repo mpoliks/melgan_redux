@@ -4,4 +4,4 @@ pyyaml
 scipy
 soundfile
 torch
-wandb==0.10.8
+wandb
