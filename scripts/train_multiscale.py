@@ -34,7 +34,24 @@ def load_state_dict_handleDP(model, filepath):
         state_dict = OrderedDict((k.split(".", 1)[1], v) for k, v in state_dict.items())
         model.load_state_dict(state_dict)
     return model
+    
+class EarlyStopping:
+    def __init__(self, patience=10, min_delta=0):
+        self.patience = patience
+        self.min_delta = min_delta
+        self.best_loss = None
+        self.counter = 0
 
+    def step(self, current_loss):
+        if self.best_loss is None or current_loss < self.best_loss - self.min_delta:
+            self.best_loss = current_loss
+            self.counter = 0
+            return False  # Do not stop
+        else:
+            self.counter += 1
+            if self.counter >= self.patience:
+                return True  # Stop training
+            return False
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -270,6 +287,9 @@ def main():
 
     best_mel_reconst = 1000000
 
+    # Initialize early stopping
+    early_stopping = EarlyStopping(patience=10, min_delta=0.001)
+
     for epoch in range(start_epoch, start_epoch + args.epochs + 1):
         for iterno, x_t in enumerate(train_loader):
             x_t = x_t.to(device)
@@ -436,6 +456,13 @@ def main():
                 costs = []
                 start = time.time()
 
+        # Early stopping check after each epoch
+        mean_loss = np.mean([cost[3] for cost in costs])
+        if early_stopping.step(mean_loss):
+            print(f"Early stopping at epoch {epoch}")
+            break
+
 
 if __name__ == "__main__":
     main()
+
