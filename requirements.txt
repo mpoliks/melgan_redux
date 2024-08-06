@@ -5,3 +5,4 @@ scipy
 soundfile
 torch
 wandb
+python-dotenv
