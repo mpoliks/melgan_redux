@@ -33,6 +33,21 @@ else
   exit 1
 fi
 
-# Step f: Run the training script
-env PYTHONPATH="$PWD:$PYTHONPATH" python scripts/train.py --save_path checkpoints --data_path data
+# Step f: Prompt the user to choose the training mode
+echo "Choose training mode:"
+echo "1. Regular training"
+echo "2. Multiscale training"
+read -p "Enter your choice [1 or 2]: " choice
+
+# Step g: Run the appropriate training script
+if [ "$choice" == "1" ]; then
+  echo "Running regular training..."
+  env PYTHONPATH="$PWD:$PYTHONPATH" python scripts/train.py --save_path checkpoints --data_path data
+elif [ "$choice" == "2" ]; then
+  echo "Running multiscale training..."
+  env PYTHONPATH="$PWD:$PYTHONPATH" python scripts/train_multiscale.py --save_path checkpoints --data_path data
+else
+  echo "Invalid choice. Please run the script again and choose either 1 or 2."
+  exit 1
+fi
 
