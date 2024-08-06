@@ -9,6 +9,7 @@ from collections import OrderedDict
 import numpy as np
 from PIL import Image
 from matplotlib import cm
+import matplotlib.pyplot as plt
 import torch
 import torch.nn.functional as F
 import wandb
@@ -23,7 +24,6 @@ from mel2wav.modules import Audio2Mel, Discriminator, Generator
 from mel2wav.utils import save_sample
 from util import seed_everything
 
-
 def load_state_dict_handleDP(model, filepath):
     try:
         model.load_state_dict(torch.load(filepath))
@@ -34,9 +34,9 @@ def load_state_dict_handleDP(model, filepath):
         state_dict = OrderedDict((k.split(".", 1)[1], v) for k, v in state_dict.items())
         model.load_state_dict(state_dict)
     return model
-    
+
 class EarlyStopping:
-    def __init__(self, patience=10, min_delta=0):
+    def __init__(self, patience=20, min_delta=0.0001):
         self.patience = patience
         self.min_delta = min_delta
         self.best_loss = None
@@ -89,6 +89,21 @@ def parse_args():
     args = parser.parse_args()
     return args
 
+def plot_metrics(epochs, training_losses, validation_losses):
+    plt.figure(figsize=(10, 5))
+    plt.plot(epochs, training_losses, label='Training Loss', marker='o')
+    plt.plot(epochs, validation_losses, label='Validation Loss', marker='o')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.legend()
+    plt.title('Training vs Validation Loss')
+    
+    # Save plot to file
+    plot_path = 'metrics.png'
+    plt.savefig(plot_path)
+    plt.close()
+
+    print(f"Plot saved as {plot_path}. Please view it manually.")
 
 def main():
 
@@ -204,7 +219,7 @@ def main():
                     break
                 except RuntimeError as e:
                     print("RuntimeError", e)
-                    print(f"recover model weight file: '{filename}'' failed")
+                    print(f"recover model weight file: '{filename}' failed")
             if not recover_model:
                 raise RuntimeError(
                     f"Cannot load model weight files for component {filenames[0]}."
@@ -287,10 +302,16 @@ def main():
 
     best_mel_reconst = 1000000
 
-    # Initialize early stopping
-    early_stopping = EarlyStopping(patience=10, min_delta=0.001)
+    # Initialize early stopping with updated parameters
+    early_stopping = EarlyStopping(patience=20, min_delta=0.0001)
+
+    epochs = []
+    training_losses = []
+    validation_losses = []
 
     for epoch in range(start_epoch, start_epoch + args.epochs + 1):
+        epoch_training_losses = []
+        epoch_validation_losses = []
         for iterno, x_t in enumerate(train_loader):
             x_t = x_t.to(device)
             s_t = fft(x_t).detach()
@@ -333,6 +354,8 @@ def main():
             scaler.update()
 
             costs.append([loss_D.item(), loss_G.item(), loss_feat.item(), s_error])
+
+            epoch_training_losses.append(s_error)
 
             wandb.log(
                 {
@@ -458,10 +481,24 @@ def main():
 
         # Early stopping check after each epoch
         mean_loss = np.mean([cost[3] for cost in costs])
+        training_losses.append(np.mean(epoch_training_losses))
+
+        with torch.no_grad():
+            epoch_validation_losses = []
+            for i, x_t in enumerate(test_loader):
+                x_t = x_t.to(device)
+                s_t = fft(x_t).detach()
+                x_pred_t = netG(s_t.to(device))
+                s_pred_t = fft(x_pred_t.detach())
+                s_error = F.l1_loss(s_t, s_pred_t).item()
+                epoch_validation_losses.append(s_error)
+            validation_losses.append(np.mean(epoch_validation_losses))
+
+        epochs.append(epoch)
+        plot_metrics(epochs, training_losses, validation_losses)
         if early_stopping.step(mean_loss):
             print(f"Early stopping at epoch {epoch}")
             break
-
 
 if __name__ == "__main__":
     main()
