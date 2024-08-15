@@ -303,7 +303,7 @@ def main():
     best_mel_reconst = 1000000
 
     # Initialize early stopping with updated parameters
-    early_stopping = EarlyStopping(patience=20, min_delta=0.0001)
+    early_stopping = EarlyStopping(patience=100, min_delta=0.0001)
 
     epochs = []
     training_losses = []
